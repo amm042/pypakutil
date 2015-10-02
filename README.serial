@@ -1,0 +1,12 @@
+The current PyPak version only understands host names or IP addresses in pakbus.conf. The workaround is to set up a PPP connection between the logger and the Linux PC. You need to run pppd on the Linux side with minimal settings: no authentication, dialing etc.. Something like
+
+pppd /dev/ttyS0 9600 debug noauth nodetach 10.0.0.1:10.0.0.2
+
+should suffice. In this case, the PC would have IP 10.0.0.1 and the logger 10.0.0.2. Of course, you can chose any other IP that works with your network setup.
+
+Once pppd is running, start a PPP connection on the logger. If it is successful, you should be able to ping the logger from your PC. When that works, you should be able to put your logger'S IP into pakbus.conf and run PyPak.
+
+If this does not solve your problem, please contact me.
+
+Dietrich Feist
+2013-08-08
