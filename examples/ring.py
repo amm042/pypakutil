@@ -3,7 +3,7 @@
 # setup logging FIRST.
 import logging
 LOGFMT = '%(asctime)s %(name)-30s %(levelname)-8s %(message).240s'
-logging.basicConfig(level = logging.DEBUG,
+logging.basicConfig(level = logging.WARNING,
                     format = LOGFMT)
 
 import optparse
@@ -114,7 +114,7 @@ class DatabaseAL (threading.Thread):
                 except Exception as x:                    
                     self.log.error("Push failed, error ={}; worklist = {}".format(x, worklist))
                        
-        self.log.warn("Shutdown")
+        self.log.info("Shutdown")
     
     def stop(self):
         self.shutdown_evt.set()
@@ -237,12 +237,12 @@ def main():
                     for metric, dl in dataloggers.iteritems():                                    
                         dl.collect(skt)
                     
-                    logging.warn("got samples all, waiting for opentsdb queue to empty")
+                    logging.info("got samples all, waiting for opentsdb queue to empty")
                     
                     while (db.busy()):
                         time.sleep(1)
                     
-                    logging.warn("all done and pushed, exiting")    
+                    logging.info("all done and pushed, exiting")    
                     exit();
                     
                     #shutdown connection
