@@ -38,8 +38,8 @@ if __name__ == "__main__":
                  collection = 'miller_run')
 
     i = 0
-    for doc in db.get_oldest_unpushed(start = datetime.datetime.utcnow().replace(tzinfo=pytz.utc) - datetime.timedelta(days=10), 
-                                      wunderground_push = {"$exists": True}): 
+    for doc in db.get_oldest_unpushed(start = datetime.datetime.utcnow().replace(tzinfo=pytz.utc) - datetime.timedelta(days=10)): 
+                                      #wunderground_push = {"$exists": True}): 
         sample_time = ux_to_utc(doc['Timestamp'])
         logging.info("pushing time: {}".format(sample_time))
   
