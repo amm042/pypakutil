@@ -1,9 +1,11 @@
+# this runs with python 2.7 - ish.
+
 # code to ring a node using link-level messaging
 
 # setup logging FIRST.
 import logging
 LOGFMT = '%(asctime)s %(name)-30s %(levelname)-8s %(message).240s'
-logging.basicConfig(level = logging.WARNING,
+logging.basicConfig(level = logging.INFO,
                     format = LOGFMT)
 
 import optparse
@@ -26,16 +28,24 @@ from Queue import Queue
 
 from sensorTag import SensorTag
 
+from mongolayer import mongodb
+
+#from wunder import pws_upload, campbell_adapter
+
 class DatabaseAL (threading.Thread):
     "database abstraction layer"
     
-    def __init__(self, server):
+    def __init__(self, server, enabled = 0):
         threading.Thread.__init__(self)
         self.name = "DatabaseAL worker thread"
         self.setDaemon(True)
         self.log = logging.getLogger('DatabaseAL')
         #self.client = SensorClient()
         self.server = server
+
+        self.enabled = enabled        
+        if self.enabled == 0:
+            self.log.warning("OpentTSDB is disabled. Data will not be saved in OpenTSDB.")
                 
         self.dataq = Queue(maxsize = 1024*1024)
         self.shutdown_evt = Event()
@@ -56,8 +66,7 @@ class DatabaseAL (threading.Thread):
         return not self.dataq.empty()
     
     def put(self, worklist):
-        
-        #format is (unix timestamp, value, Tags)
+        # format is (unix timestamp, value, Tags)
         
         m = set()
         t = set()
@@ -107,10 +116,11 @@ class DatabaseAL (threading.Thread):
             if len(worklist) > 0:
                 try:                   
                     #i = self.client.multiplePut(worklist)
-                    
-                    self.put(worklist)
-                    
-                    self.log.info("Pushed {} samples to OpenTSDB.".format(len(worklist)))
+                
+                    if self.enabled > 0:    
+                        self.put(worklist)                    
+                        self.log.info("Pushed {} samples to OpenTSDB.".format(len(worklist)))
+                        
                 except Exception as x:                    
                     self.log.error("Push failed, error ={}; worklist = {}".format(x, worklist))
                        
@@ -176,6 +186,15 @@ def main():
     #print "metric_ids: " + str(metric_ids)
     
     #exit()
+    
+    #wu = None
+    #if cf.getint('wunderground', 'enabled') > 0:
+    #    pws = pws_upload(pwsid = cf.get('wunderground', 'PWSID'),
+    #                     password = cf.get('wunderground', 'password'),
+    #                     url = cf.get('wunderground', 'url'))
+    #    
+    #    wu = campbell_adapter(pws, cf.get('wunderground', 'table'))
+    
     logging.debug('Using dataloggers = {}'.format( dataloggers))
 
     logging.getLogger("SensorAPI_API").setLevel(logging.INFO)
@@ -183,9 +202,19 @@ def main():
     logging.getLogger("ZeroMQLayer.ZeroMQClient").setLevel(logging.DEBUG)    
     try:
         db = None
-        db = DatabaseAL(cf.get("opentsdb", "server"))
+        db = DatabaseAL(cf.get("opentsdb", "server"),
+                        cf.getint("opentsdb", "enabled"))
         db.start()
         
+        recordadd = None
+        if cf.getint('mongodb', 'enabled') > 0:
+            mongo = mongodb(cf.get("mongodb", "server"),
+                            cf.get("mongodb", "db"),
+                            cf.get("mongodb", "collection")
+                            )
+            recordadd = mongo.add_record
+            
+            
         while True:
             try:
                 
@@ -219,12 +248,13 @@ def main():
             
                 #replace the pakbus address with an instance of datalogger
                 for metric, address in dataloggers.iteritems():
-                    dataloggers[metric] = DataLogger(localdb,
+                    dataloggers[metric] = DataLogger(localdb,                                                     
                                                      skt, 
                                                      my_node_id,
                                                      metric,
                                                      address,
                                                      db.append,
+                                                     recordadd,
                                                      sec_codes[metric],
                                                      )
             

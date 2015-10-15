@@ -44,7 +44,16 @@ class DataLogger:
     #def __init__(self, number, socket, my_node_id, metric_id, pakbus_id):
     def __init__(self, db, socket, my_node_id, metric_id, pakbus_id, 
                  data_callback = None,
+                 record_callback = None,
+                 #wu_object = None,
                  security_code = 0x1111):
+        """
+        db is the sqlite db to use to store the last record numbers
+        
+        the data_callback is called for each time series (eg for openTSDB)
+        the record callback is called once for each row in the datalogger's table 
+        
+        """
         #self.number = number
 
         self.log = logging.getLogger(__name__)
@@ -56,6 +65,8 @@ class DataLogger:
         self.pakbus_id = pakbus_id
         self.security_code = security_code
         self.data_callback = data_callback
+        self.record_callback = record_callback
+        #self.wu_object = wu_object
         
         self.log.debug("Getting serial number for {}@{}".format(metric_id, pakbus_id))
 
@@ -171,22 +182,74 @@ class DataLogger:
                 print "Could not get tables for datalogger with metric: " + str(self.metric_id) + " and pakbus: " + str(self.pakbus_id) + " after 3 tries."
         return list_of_tables
     def emit_all(self, tbl, recs):
-        #self.data_callback(tbl.dic_of_sensorTags, rec)
+        """
+        tbl is a table.Table object that represents a Campbell data table. It has a list of tags/ column names/units in the data table.
+        Sensor tags are provided by sensorTag.SensorTag 
+        Table: 
+            Table Name: CR800_2; 
+            Table No: 2; 
+            Sensor Tags: {'WaterTemp': Sensor Name: WaterTemp; 
+                                        Sensor Units: deg_C; 
+                                        Sensor Process: Smp, 
+                        'WaterLevel': Sensor Name: WaterLevel; 
+                                    Sensor Units: meters; 
+                                    Sensor Process: Smp, 
+                        'BattV': Sensor Name: BattV; 
+                                Sensor Units: Volts; 
+                                Sensor Process: Smp, 
+                        'PTemp_C': Sensor Name: PTemp_C; 
+                                Sensor Units: Deg_C; 
+                                Sensor Process: Smp}
         
-                        #if self.data_callback:              
-                    #for rec in data[0]['RecFrag']:
-                        #self.data_callback(tbl.dic_of_sensorTags, rec)  
-            
+        recs is the list of data records. 
+        <type 'list'>: [
+                        {'Fields': {'WaterTemp': [15.49], 'WaterLevel': [0.052], 'BattV': [13.85], 'PTemp_C': [20.02]},
+                         'RecNbr': 70558, 'TimeOfRec': (813241500, 0)}, 
+                         
+                         {'Fields': {'WaterTemp': [15.53], 'WaterLevel': [0.052], 'BattV': [13.84], 'PTemp_C': [20.26]}, 
+                         'RecNbr': 70559, 'TimeOfRec': (813241800, 0)}, 
+                         
+                         {'Fields': {'WaterTemp': [15.57], 'WaterLevel': [0.052], 'BattV': [13.8], 'PTemp_C': [20.48]}, 
+                         'RecNbr': 70560, 'TimeOfRec': (813242100, 0)}, 
+                         
+                         {'Fields': {'WaterTemp': [15.6], 'WaterLevel': [0.052], 'BattV': [13.8], 'PTemp_C': [20.72]}, 
+                         'RecNbr': 70561, 'TimeOfRec': (813242400, 0)}, 
+                         
+                         {'Fields': {'WaterTemp': [15.64], 'WaterLevel': [0.052], 'BattV': [13.81], 'PTemp_C': [20.96]}, 
+                         'RecNbr': 70562, 'TimeOfRec': (813242700, 0)}, 
+                         
+                         {'Fields': {'WaterTemp': [15.68], 'WaterLevel': [0.052], 'BattV': [13.8], 'PTemp_C': [21.15]},                          
+                         'RecNbr': 70563, 'TimeOfRec': (813243000, 0)}, 
+                         
+                         {'Fields': {'WaterTemp': [15.73], 'WaterLevel': [0.052], 'BattV': [13.82], 'PTemp_C': [21.31]}, 
+                         'RecNbr': 70564, 'TimeOfRec': (813...
+        
+        """
+
+
+        #self.log.info("emit: {}, recs: {}".format(tbl, recs))
+        
         if self.data_callback:            
             for rec in recs:
                 timestamp = rec['TimeOfRec'][0] + 631166400                
                 # emit record number
                 self.data_callback (timestamp, rec['RecNbr'], tbl.record_tag)
-                # and all fields
+                # and all fields                        
+         
+                #if self.wu_object and tbl.name == self.wu_object.table:
+                    #self.wu_object.put(timestamp, rec['Fields'])
+                
+                
+                if self.record_callback:
+                    self.record_callback(tbl.name, timestamp, rec)
+                
                 for sensor_name, values in rec['Fields'].iteritems():                    
                     self.data_callback(timestamp,                                        
                                        values[0],
                                        tbl.dic_of_sensorTags[sensor_name].tag)
+        
+        
+                
         
     def collect_all(self, socket):                        
         for tbl in self.list_of_tables:
