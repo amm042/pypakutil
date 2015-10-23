@@ -64,7 +64,7 @@ if 0:
 
 if __name__ == "__main__":
         
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.WARN)
     wu = pws_upload('KPALEWIS11',
                     'FqqGy5GZ')
     

@@ -5,7 +5,7 @@
 # setup logging FIRST.
 import logging
 LOGFMT = '%(asctime)s %(name)-30s %(levelname)-8s %(message).240s'
-logging.basicConfig(level = logging.INFO,
+logging.basicConfig(level = logging.WARN,
                     format = LOGFMT)
 
 import optparse

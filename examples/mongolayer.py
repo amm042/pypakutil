@@ -68,18 +68,25 @@ class mongodb( ):
         
     
     def get_oldest_unpushed(self, 
-                            start = None, 
-                            wunderground_push = {"$exists": False }):
+                            start = None,
+                            end = None, 
+                            wunderground_push = {"$exists": False },
+                            timeout = True):
     
-        if start == None:
+        if start == None and end == None:
             tsq = {"$exists": True}            
-        else:
-            tsq = {"$gte": self.ts_to_ux(start) }
+        else:           
+            tsq = {}
+            if start:
+                tsq["$gte"] = self.ts_to_ux(start)
+            if end:
+                tsq["$lt"] = self.ts_to_ux(end)
         
         return self.collection.find(
                     { 'wunderground_push': wunderground_push,
                       'Timestamp': tsq,
-                      'TableName': 'Table'}
+                      'TableName': 'Table'},
+                    no_cursor_timeout = not timeout
                     ).sort('Timestamp', pymongo.ASCENDING)
                     
     def get_agg(self, params, start, end, agg):
