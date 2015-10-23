@@ -6,8 +6,9 @@ from examples.mongolayer import mongodb
 import pymongo
 import datetime
 import pytz
-
+import math
 from pint import UnitRegistry
+from test.test_support import temp_cwd
 
 ureg = UnitRegistry()
 
@@ -21,11 +22,45 @@ def ux_to_utc(uxtime):
         
 def c_to_f(c):
     return ureg.Quantity(c, ureg.degC).to(ureg.degF).magnitude
+def c_to_k(c):
+    return ureg.Quantity(c, ureg.degC).to(ureg.degK).magnitude 
+
 def ms_to_mph(ms):
     "meters per second (ms) to miles per hour"
     return (ureg.Quantity(ms, ureg.meter).to(ureg.mile) * 3600).magnitude
 def kw_to_w(kw):
     return kw * 1000
+
+def sat_press(temp_c):
+    """saturated vapor pressure 
+    
+    ref: http://www.srh.noaa.gov/images/epz/wxcalc/vaporPressure.pdf
+    """
+    f = (7.5 * temp_c) / (237.3 + temp_c)
+    return 6.11 * 10 ** (f)
+
+def dewpoint(temp_c, rel_hum):
+    """rel_hum = 90.5 means 90.5% (don't use 0.905). Result is in C
+    
+    ref: http://www.srh.noaa.gov/images/epz/wxcalc/wetBulbTdFromRh.pdf
+    """
+
+    e_s = sat_press(temp_c)
+    
+    return (237.3 * math.log(e_s*rel_hum/611))/ \
+            (7.5 * math.log(10) - math.log(e_s*rel_hum/611))
+    
+if 0:
+    "computes a dew point chart"
+    print "   ",
+    for temp_c in range(20,120, 10):
+        print "{:6d} ".format(temp_c),
+    print
+    for hum in range(20,100,10):
+        print "{:2.0f} ".format(hum),
+        for temp_c in range(20,120, 10):
+            print "{:6.2f} ".format(dewpoint(temp_c, hum)),
+        print
 
 if __name__ == "__main__":
         
@@ -60,7 +95,7 @@ if __name__ == "__main__":
                    winddir_avg2m = wind_2m['WindDir'],
                    
                    humidity = doc['RelHum'],
-                   
+                   dewptf = c_to_f ( dewpoint ( doc['AirTemp'], doc['RelHum'])),
                    tempf = c_to_f(doc['AirTemp']),
                    
                    rainin = db.get_sum( ('Rain_Tot', ), 
