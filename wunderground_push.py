@@ -130,5 +130,5 @@ if __name__ == "__main__":
         #logging.debug("pushed doc: {}".format(doc))
         #db.collection.update({'_id': doc['_id']},
          #                    {'$unset': {"wunderground_push": ""}})
-    logging.warn("Done")
+    logging.info("Done")
     
