@@ -102,7 +102,7 @@ if __name__ == "__main__":
                                         sample_time - datetime.timedelta(seconds=60*60),
                                         sample_time)['Rain_Tot'],
                    
-                   dailyrain = db.get_sum( ('Rain_Tot', ), 
+                   dailyrainin = db.get_sum( ('Rain_Tot', ), 
                                         datetime.datetime(sample_time.year,
                                                           sample_time.month,
                                                           sample_time.day,
