@@ -24,7 +24,7 @@ def c_to_f(c):
     return ureg.Quantity(c, ureg.degC).to(ureg.degF).magnitude
 def c_to_k(c):
     return ureg.Quantity(c, ureg.degC).to(ureg.degK).magnitude 
-def mm_to_in(mm):
+def mm_to_inch(mm):
 	return ureg.Quantity(mm, ureg.mm).to(ureg.inch).magnitude
 
 def ms_to_mph(ms):
