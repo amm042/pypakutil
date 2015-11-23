@@ -24,6 +24,8 @@ def c_to_f(c):
     return ureg.Quantity(c, ureg.degC).to(ureg.degF).magnitude
 def c_to_k(c):
     return ureg.Quantity(c, ureg.degC).to(ureg.degK).magnitude 
+def mm_to_in(mm):
+	return ureg.Quantity(mm, ureg.mm).to(ureg.inch).magnitude
 
 def ms_to_mph(ms):
     "meters per second (ms) to miles per hour"
@@ -98,16 +100,17 @@ if __name__ == "__main__":
                    dewptf = c_to_f ( dewpoint ( doc['AirTemp'], doc['RelHum'])),
                    tempf = c_to_f(doc['AirTemp']),
                    
-                   rainin = db.get_sum( ('Rain_Tot', ), 
+                   rainin = mm_to_inch( db.get_sum( ('Rain_Tot', ), 
                                         sample_time - datetime.timedelta(seconds=60*60),
-                                        sample_time)['Rain_Tot'],
+                                        sample_time)['Rain_Tot']),
                    
-                   dailyrainin = db.get_sum( ('Rain_Tot', ), 
+                   dailyrainin = mm_to_inch( db.get_sum( ('Rain_Tot', ), 
                                         datetime.datetime(sample_time.year,
                                                           sample_time.month,
                                                           sample_time.day,
                                                           tzinfo= pytz.timezone('UTC')),
-                                        sample_time)['Rain_Tot'],
+                                        sample_time)['Rain_Tot']),
+
                    solarradiation = kw_to_w(doc['Solar_kW'])
                    
                    )
